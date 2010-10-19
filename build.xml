@@ -1,0 +1,49 @@
+<project name="JAR File Builder" default="dist" basedir=".">
+
+	<property name="version" value="1.0.3" />
+
+	<taskdef name="ebeanEnhance" classname="com.avaje.ebean.enhance.ant.AntEnhanceTask" classpath="${basedir}/lib/ebean-agent.jar" />
+
+	<target name="dist" depends="clean,compile">
+		<jar jarfile="${basedir}/lib/play-ebean.jar" basedir="${basedir}/tmp" />
+		<echo file="${basedir}/tmp/manifest" message="version=${version}${line.separator}frameworkVersions=1.0" />
+		<mkdir dir="${basedir}/dist" />
+		<zip destfile="${basedir}/dist/ebean-${version}.zip">
+			<fileset dir="${basedir}">
+				<include name="lib/ebean.jar" />
+				<include name="lib/play-ebean*.jar" />
+				<include name="src/**" />
+			</fileset>
+			<fileset dir="${basedir}/tmp">
+				<include name="manifest" />
+			</fileset>
+		</zip>
+		<delete dir="${basedir}/tmp" />
+	</target>
+
+	<target name="clean">
+		<delete file="${basedir}/lib/play-ebean.jar" />
+		<delete dir="${basedir}/dist" />
+	</target>
+
+	<target name="compile">
+		<mkdir dir="${basedir}/tmp" />
+		<javac srcdir="${basedir}/src" destdir="${basedir}/tmp" debug="yes">
+			<classpath>
+				<fileset dir="lib">
+					<include name="ebean.jar" />
+				</fileset>
+				<fileset dir="/usr/local/play/framework">
+					<include name="**/*.jar" />
+				</fileset>
+			</classpath>
+		</javac>
+		<copy todir="${basedir}/tmp">
+			<fileset dir="${basedir}/src">
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy>
+		<ebeanEnhance classSource="${basedir}/tmp" packages="play/modules/ebean" transformArgs="transientInternalFields=true;debug=1" />
+	</target>
+
+</project>
