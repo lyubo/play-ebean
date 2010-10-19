@@ -1,0 +1,12 @@
+Description
+-----------
+play-ebean module adds Ebean ORM to as an alternative to Hibernate. It is still in ver experimental stage.
+Since Ebean uses JPA annotations as Hibernate no change in model suould be done in general.
+
+Configuration
+-------------
+1. Install the ebean module
+2. add 'module.ebean=${play.path}/modules/ebean' in application.conf file 
+
+See example application included with the module
+
