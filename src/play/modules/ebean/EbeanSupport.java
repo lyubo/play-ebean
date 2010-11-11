@@ -99,11 +99,6 @@ public class EbeanSupport
     throw enhancementError();
   }
 
-  public static <T extends EbeanSupport> Query<T> Query(Class<T> clazz)
-  {
-    return ebean().createQuery(clazz);
-  }
-
   protected static <T extends EbeanSupport> T findUnique(Class<T> beanType, String property, Object value, Object[] moreParams)
   {
     Query<T> q = ebean().createQuery(beanType);
