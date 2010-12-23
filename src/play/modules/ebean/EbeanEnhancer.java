@@ -31,7 +31,7 @@ public class EbeanEnhancer extends Enhancer
     CtClass ctClass = makeClass(applicationClass);
  
     if (!ctClass.subtypeOf(classPool.get("play.modules.ebean.EbeanSupport"))) {
-      // We don't want play style enhancements to happen ro classes other than subclasses of EbeanSupport
+      // We don't want play style enhancements to happen to classes other than subclasses of EbeanSupport
       return;
     }
 
@@ -61,7 +61,7 @@ public class EbeanEnhancer extends Enhancer
     }
 
     // create     
-    CtMethod create = CtMethod.make("public static play.modules.ebean.EbeanSupport create(String name, play.mvc.Scope.Params params) { return create(" + entityName + ".class,name, params); }",ctClass);
+    CtMethod create = CtMethod.make("public static play.modules.ebean.EbeanSupport create(String name, play.mvc.Scope.Params params) { return create(" + entityName + ".class,name, params.all(), null); }",ctClass);   
     ctClass.addMethod(create);
 
     // deleteAll
@@ -79,7 +79,11 @@ public class EbeanEnhancer extends Enhancer
     // findUnique
     CtMethod fundUnique = CtMethod.make("public static play.modules.ebean.EbeanSupport findUnique(String property, Object value, Object[] moreParams) { return findUnique(" + entityName + ".class, property,value, moreParams); }", ctClass);
     ctClass.addMethod(fundUnique);
-    
+
+    // query
+    CtMethod query = CtMethod.make("public static com.avaje.ebean.Query query() { return ebean().createQuery(" + entityName + ".class); }", ctClass);
+    ctClass.addMethod(query);
+
     // Done.
     applicationClass.enhancedByteCode = ctClass.toBytecode();
     ctClass.defrost();

@@ -1,6 +1,7 @@
 <project name="JAR File Builder" default="dist" basedir=".">
 
 	<property name="version" value="1.0.3" />
+	<property name="play.home" value="/usr/local/play" />
 
 	<taskdef name="ebeanEnhance" classname="com.avaje.ebean.enhance.ant.AntEnhanceTask" classpath="${basedir}/lib/ebean-agent.jar" />
 
@@ -43,7 +44,7 @@
 				<exclude name="**/*.java" />
 			</fileset>
 		</copy>
-		<ebeanEnhance classSource="${basedir}/tmp" packages="play/modules/ebean" transformArgs="transientInternalFields=true;debug=1" />
+		<ebeanEnhance classpath="${play.home}/framework/play.jar" classSource="${basedir}/tmp" packages="play/modules/ebean" transformArgs="transientInternalFields=true;debug=1" />
 	</target>
 
 </project>
