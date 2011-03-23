@@ -1,20 +1,21 @@
 <project name="JAR File Builder" default="dist" basedir=".">
 
-	<property name="version" value="1.0.3" />
+	<property name="version" value="1.0.4" />
 	<property name="play.home" value="/usr/local/play" />
 
 	<taskdef name="ebeanEnhance" classname="com.avaje.ebean.enhance.ant.AntEnhanceTask" classpath="${basedir}/lib/ebean-agent.jar" />
 
 	<target name="dist" depends="clean,compile">
 		<jar jarfile="${basedir}/lib/play-ebean.jar" basedir="${basedir}/tmp" />
-		<echo file="${basedir}/tmp/manifest" message="version=${version}${line.separator}frameworkVersions=1.0" />
+		<echo file="${basedir}/tmp/manifest" message="version=${version}${line.separator}frameworkVersions=1.1" />
 		<mkdir dir="${basedir}/dist" />
 		<zip destfile="${basedir}/dist/ebean-${version}.zip">
 			<fileset dir="${basedir}">
 				<include name="lib/ebean.jar" />
 				<include name="lib/play-ebean*.jar" />
 				<include name="src/**" />
-			</fileset>
+				<include name="ebean-*.zip" />
+		   </fileset>
 			<fileset dir="${basedir}/tmp">
 				<include name="manifest" />
 			</fileset>

@@ -31,6 +31,7 @@ import play.mvc.Scope.Params;
 
 import com.avaje.ebean.EbeanServer;
 import com.avaje.ebean.Query;
+import com.avaje.ebean.Update;
 
 @SuppressWarnings("unchecked")
 @MappedSuperclass
@@ -53,7 +54,7 @@ public class EbeanSupport implements play.db.Model
   {
     try {
       BeanWrapper bw = new BeanWrapper(o.getClass());
-      // Start with relationst
+      // Start with relations
       Set<Field> fields = new HashSet<Field>();
       Class<?> clazz = o.getClass();
       while (!clazz.equals(Object.class)) {
@@ -77,9 +78,9 @@ public class EbeanSupport implements play.db.Model
         }
 
         if (isEntity) {
-          Class<Model> c = (Class<Model>) Play.classloader.loadClass(relation);
-          if (EbeanSupport.class.isAssignableFrom(c)) {
-            String keyName = Model.Manager.factoryFor(c).keyName();
+          Class<Model> cls = (Class<Model>) Play.classloader.loadClass(relation);
+          if (EbeanSupport.class.isAssignableFrom(cls)) {
+            String keyName = Model.Manager.factoryFor(cls).keyName();
             if (multiple && Collection.class.isAssignableFrom(field.getType())) {
               Collection<Object> l = new ArrayList<Object>();
               if (SortedSet.class.isAssignableFrom(field.getType())) {
@@ -91,16 +92,13 @@ public class EbeanSupport implements play.db.Model
               if (ids != null) {
                 params.remove(name + "." + field.getName() + "." + keyName);
                 for (String _id : ids) {
-                  if (_id.equals("")) {
-                    continue;
+                  if (!_id.equals("")) {
+                    Object result = ebean().find(cls, Binder.directBind(_id, Model.Manager.factoryFor((Class<Model>) Play.classloader.loadClass(relation)).keyType()));
+                    if (result != null)
+                      l.add(result);
+                    else
+                      Validation.addError(name + "." + field.getName(), "validation.notFound", _id);
                   }
-                  Query<?> q = ebean().createQuery(Class.forName(relation)).where(keyName + " = ?");
-                  q.setParameter(1, Binder.directBind(_id, Model.Manager.factoryFor((Class<Model>) Play.classloader.loadClass(relation)).keyType()));
-                  Object result = q.findUnique();
-                  if (result != null)
-                    l.add(result);
-                  else
-                    Validation.addError(name + "." + field.getName(), "validation.notFound", _id);
                 }
                 bw.set(field.getName(), o, l);
               }
@@ -108,9 +106,7 @@ public class EbeanSupport implements play.db.Model
               String[] ids = params.get(name + "." + field.getName() + "." + keyName);
               if (ids != null && ids.length > 0 && !ids[0].equals("")) {
                 params.remove(name + "." + field.getName() + "." + keyName);
-                Query<?> q = ebean().createQuery(Class.forName(relation)).where(keyName + " = ?");
-                q.setParameter(1, Binder.directBind(ids[0], Model.Manager.factoryFor((Class<Model>) Play.classloader.loadClass(relation)).keyType()));
-                Object to = q.findUnique();
+                Object to = ebean().find(cls, Binder.directBind(ids[0], Model.Manager.factoryFor((Class<Model>) Play.classloader.loadClass(relation)).keyType()));
                 if (to != null)
                   bw.set(field.getName(), o, to);
                 else
@@ -168,6 +164,16 @@ public class EbeanSupport implements play.db.Model
     throw enhancementError();
   }
 
+  public static long count()
+  {
+    throw enhancementError();
+  }
+
+  public static long count(String query, Object... params)
+  {
+    throw enhancementError();
+  }
+
   public static <T extends EbeanSupport> List<T> findAll()
   {
     throw enhancementError();
@@ -178,20 +184,24 @@ public class EbeanSupport implements play.db.Model
     throw enhancementError();
   }
 
-  public static <T extends EbeanSupport> T findUnique(String property, Object value, Object... moreParams)
+  public static <T extends EbeanSupport> T findUnique(String query,Object... params)
   {
     throw enhancementError();
   }
 
-  public static <T extends EbeanSupport> Query<T> query()
+  public static <T extends EbeanSupport> Query<T> find(String query, Object... params)
   {
     throw enhancementError();
   }
 
-
-  public static <T extends EbeanSupport> Query<T> query(Class<T> clazz)
+  public static <T extends EbeanSupport> Query<T> all()
   {
-    return ebean().createQuery(clazz);
+    throw enhancementError();
+  }
+
+  public static int delete(String query, Object... params)
+  {
+    throw enhancementError();
   }
 
   public static int deleteAll()
@@ -199,20 +209,29 @@ public class EbeanSupport implements play.db.Model
     throw enhancementError();
   }
 
-  protected static EbeanServer ebean()
-  {
-    return EbeanContext.server();
-  }
-
-  protected static <T extends EbeanSupport> T findUnique(Class<T> beanType, String property, Object value, Object[] moreParams)
+  protected static <T extends EbeanSupport> Query<T> createQuery(Class<T> beanType, String where, Object[] params)
   {
     Query<T> q = ebean().createQuery(beanType);
-    q.where().eq(property, value);
-    for (int i = 0; i < moreParams.length; i += 2)
-      q.where().eq(moreParams[i].toString(), moreParams[i + 1]);
-    return q.findUnique();
+    if (where != null) {
+      q.where(where);
+      for (int i = 0; i < params.length; i++)
+        q.setParameter(i + 1, params[i]);
+    }
+    return q;
   }
 
+  protected static <T extends EbeanSupport> Update<T> createDeleteQuery(Class<T> beanType, String where, Object[] params)
+  {
+    String delete = "delete from " + beanType.getSimpleName();
+    if (where != null) delete = delete + " where " + where;
+    Update<T> d = ebean().createUpdate(beanType,delete);
+    if (params != null) {
+      for (int i = 0; i < params.length; i++)
+        d.setParameter(i + 1, params[i]);
+    }
+    return d;
+  }
+ 
   protected void afterLoad()
   {
   }
@@ -223,6 +242,11 @@ public class EbeanSupport implements play.db.Model
 
   protected void afterSave(boolean isInsert)
   {
+  }
+
+  protected static EbeanServer ebean()
+  {
+    return EbeanContext.server();
   }
 
   private static UnsupportedOperationException enhancementError()

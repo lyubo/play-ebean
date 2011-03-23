@@ -1,12 +1,27 @@
 Description
 -----------
-play-ebean module adds Ebean ORM to as an alternative to Hibernate. It is still in ver experimental stage.
-Since Ebean uses JPA annotations as Hibernate no change in model suould be done in general.
+play-ebean module adds Ebean ORM to as an alternative to Hibernate. It is still in very experimental stage.
+Since Ebean uses JPA annotations as Hibernate no change in model shuould be done in general.
 
 Configuration
 -------------
 1. Install the ebean module
 2. add 'module.ebean=${play.path}/modules/ebean' in application.conf file 
 
-See example application included with the module
+See example applications included with the module
 
+
+Usage: I'd tried to mimic the way standard JPAPlugin does the things. There's aEbeanSupport class which is enhanced
+with helper methods with names and parameters as in JPASupport where possible. There's also Model class which adds id field
+for all of its descendants. Also JPASupport implements play.db.Model interface which gives the possibility to use CROD
+module as well as Fixtures.
+
+However there are differences in usage of EbeanPlugin compared to standard JPAPlugin, the biggest being is that Ebean
+does not suport JPA query. Here is what ebean docs say:
+
+	Ebean has it's own query language. Prior to this decision JPQL (the JPA query language)
+	was investigated to see if it would meet the desired goals of Ebean and it did not.
+	Specifically I wanted to support “Partial Objects” via the query language and it is difficult to
+	see how JPQL will evolve to support this (specifically difficulties around its select clause).
+
+I've ported two play! example applications to use ebean: yabe and zencontact. Any feedback is welcome.

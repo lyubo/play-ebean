@@ -1,5 +1,6 @@
 package play.modules.ebean;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
@@ -7,8 +8,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.persistence.Entity;
@@ -18,7 +21,6 @@ import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
-import javax.persistence.Transient;
 import javax.sql.DataSource;
 
 import play.Logger;
@@ -31,6 +33,7 @@ import play.db.Model;
 import play.db.Model.Property;
 import play.db.jpa.JPAPlugin;
 import play.exceptions.UnexpectedException;
+import play.mvc.Http.Request;
 
 import com.avaje.ebean.EbeanServer;
 import com.avaje.ebean.EbeanServerFactory;
@@ -40,7 +43,8 @@ import com.avaje.ebean.config.ServerConfig;
 
 public class EbeanPlugin extends PlayPlugin
 {
-  public static EbeanServer defaultServer;
+  public static EbeanServer              defaultServer;
+  public static Map<String, EbeanServer> SERVERS = new HashMap<String,EbeanServer>();
 
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public static EbeanServer createServer(String name, DataSource dataSource)
@@ -57,7 +61,7 @@ public class EbeanPlugin extends PlayPlugin
     try {
       result = EbeanServerFactory.create(cfg);
     } catch (Throwable t) {
-      Logger.error("Failed to create ebean server", t);
+      Logger.error("Failed to create ebean server (%s)", t.getMessage());
     }
     return result;
   }
@@ -73,6 +77,7 @@ public class EbeanPlugin extends PlayPlugin
     // TODO: Hack! We have to change this once built-in plugins may be deactivated
     for (PlayPlugin plugin : Play.plugins) {
       if (plugin instanceof JPAPlugin) {
+        Logger.debug("EBEAN: Removing JPAPlugin in order to replace JPA implementation");
         Play.plugins.remove(plugin);
         break;
       }
@@ -82,13 +87,31 @@ public class EbeanPlugin extends PlayPlugin
   @Override
   public void onApplicationStart()
   {
-    if (DB.datasource != null) defaultServer = createServer("default", DB.datasource);
+    if (DB.datasource != null) {
+      Logger.debug("EBEAN: Creating default server");
+      defaultServer = createServer("default", DB.datasource);
+    }
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void beforeInvocation()
   {
-    EbeanContext.set(defaultServer);
+    EbeanServer server = defaultServer;
+    // Hook to introduce more data sources
+    Map<String, DataSource> ds = (Map<String, DataSource>) Request.current().args.get("dataSources");
+    if (ds != null) {
+      // Currently we support single data source
+      String firstKey = ds.keySet().iterator().next();
+      if (firstKey != null) {
+        server = SERVERS.get(firstKey);
+        if (server == null) {
+          server = createServer(firstKey, ds.get(firstKey));
+          SERVERS.put(firstKey, server);
+        }
+      }
+    }
+    EbeanContext.set(server);
   }
 
   @Override
@@ -110,23 +133,53 @@ public class EbeanPlugin extends PlayPlugin
   public void enhance(ApplicationClass applicationClass) throws Exception
   {
     try {
-    EbeanEnhancer.class.newInstance().enhanceThisClass(applicationClass);
+      EbeanEnhancer.class.newInstance().enhanceThisClass(applicationClass);
+    } catch (Throwable t) {
+      Logger.error(t, "EbeanPlugin enhancement error");
     }
-    catch (Throwable t) {
-      Logger.error(t,"EbeanPlugin enhancement error");
-    }
-    }
+  }
 
   @Override
   @SuppressWarnings("unchecked")
   public Model.Factory modelFactory(Class<? extends Model> modelClass)
   {
-    if (modelClass.isAssignableFrom(EbeanSupport.class) && modelClass.isAnnotationPresent(Entity.class)) {
+    if (EbeanSupport.class.isAssignableFrom(modelClass) && modelClass.isAnnotationPresent(Entity.class)) {
       return new EbeanModelLoader((Class<EbeanSupport>) modelClass);
     }
     return null;
   }
 
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  @Override
+  public Object bind(String name, Class clazz, java.lang.reflect.Type type, Annotation[] annotations, Map<String, String[]> params)
+  {
+    if (EbeanSupport.class.isAssignableFrom(clazz)) {
+      String keyName = Model.Manager.factoryFor(clazz).keyName();
+      String idKey = name + "." + keyName;
+      if (params.containsKey(idKey) && params.get(idKey).length > 0 && params.get(idKey)[0] != null && params.get(idKey)[0].trim().length() > 0) {
+        String id = params.get(idKey)[0];
+        Object o;
+        try {
+          o = EbeanContext.server().find(clazz, play.data.binding.Binder.directBind(name, annotations, id, Model.Manager.factoryFor(clazz).keyType()));
+        } catch (Exception e) {
+          throw new UnexpectedException(e);
+        }
+        return EbeanSupport.edit(o, name, params, annotations);
+      }
+      return EbeanSupport.create(clazz, name, params, annotations);
+    }
+    return super.bind(name, clazz, type, annotations, params);
+  }
+
+  @Override
+  public Object bind(String name, Object o, Map<String, String[]> params)
+  {
+    if (o instanceof EbeanSupport) {
+      return EbeanSupport.edit(o, name, params, null);
+    }
+    return null;
+  }
+  
   public static class EbeanModelLoader implements Model.Factory
   {
 
@@ -171,17 +224,11 @@ public class EbeanPlugin extends PlayPlugin
       }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public List<Model> fetch(int offset, int length, String orderBy, String orderDirection, List<String> properties, String keywords, String where)
+    public List<Model> fetch(int offset, int size, String orderBy, String order, List<String> searchFields, String keywords, String where)
     {
-      // TODO Actual implementation
-      return new ArrayList<Model>();
-    }
-
-    @Override
-    public Long count(List<String> searchFields, String keywords, String where)
-    {
-      Query<?> q = EbeanSupport.query(modelClass);
+      Query<?> q = EbeanContext.server().createQuery(modelClass);
       String filter = null;
       if (where != null && !where.trim().equals("")) {
         filter = where.trim();
@@ -191,11 +238,47 @@ public class EbeanPlugin extends PlayPlugin
         if (!searchQuery.equals("")) {
           filter = (filter != null ? "(" + filter + ") and " : "") + "(" + searchQuery + ")";
         }
-        if (filter != null && filter.indexOf("?1") != -1) {
-          q.setParameter(1, "%" + keywords.toLowerCase() + "%");
+      }
+
+      if (filter != null) { 
+        q.where(filter);
+        if (filter.indexOf(":keywords") != -1)  q.setParameter("keywords",  "%" + keywords.toLowerCase() + "%");
+      }
+
+      if (orderBy == null && order == null) {
+        orderBy = "id";
+        order = "ASC";
+      }
+      if (orderBy == null && order != null) {
+        orderBy = "id";
+      }
+      if (order == null || (!order.equals("ASC") && !order.equals("DESC"))) {
+        order = "ASC";
+      }
+      q.orderBy(orderBy + " " + order);
+      q.setFirstRow(offset).setMaxRows(size);
+      return (List<Model>) q.findList();
+    }
+
+    @Override
+    public Long count(List<String> searchFields, String keywords, String where)
+    {
+      Query<?> q = EbeanContext.server().createQuery(modelClass);
+      String filter = null;
+      if (where != null && !where.trim().equals("")) {
+        filter = where.trim();
+      }
+      if (keywords != null && !keywords.equals("")) {
+        String searchQuery = getSearchQuery(searchFields);
+        if (!searchQuery.equals("")) {
+          filter = (filter != null ? "(" + filter + ") and " : "") + "(" + searchQuery + ")";
         }
       }
-      if (filter != null) q.where(filter);
+      if (filter != null) { 
+        q.where(filter);
+        if (filter.indexOf(":keywords") != -1)  q.setParameter("keywords", "%" + keywords.toLowerCase() + "%");
+      }
+
       return Long.valueOf(q.findRowCount());
     }
 
@@ -217,10 +300,7 @@ public class EbeanPlugin extends PlayPlugin
         tclazz = tclazz.getSuperclass();
       }
       for (Field f : fields) {
-        if (Modifier.isTransient(f.getModifiers())) {
-          continue;
-        }
-        if (f.isAnnotationPresent(Transient.class)) {
+        if (Modifier.isStatic(f.getModifiers()) || f.getName().toLowerCase().startsWith("_ebean")) {
           continue;
         }
         Model.Property mp = buildProperty(f);
@@ -265,7 +345,7 @@ public class EbeanPlugin extends PlayPlugin
               @SuppressWarnings("unchecked")
               public List<Object> list()
               {
-                List<?> result = (List<?>) EbeanContext.server().find(field.getClass()).findList();
+                List<?> result = (List<?>) EbeanContext.server().find(field.getType()).findList();
                 return (List<Object>) result;
               }
             };
@@ -279,7 +359,7 @@ public class EbeanPlugin extends PlayPlugin
             @SuppressWarnings("unchecked")
             public List<Object> list()
             {
-              List<?> result = (List<?>) EbeanContext.server().find(field.getClass()).findList();
+              List<?> result = (List<?>) EbeanContext.server().find(field.getType()).findList();
               return (List<Object>) result;
             }
           };
@@ -297,7 +377,7 @@ public class EbeanPlugin extends PlayPlugin
               @SuppressWarnings("unchecked")
               public List<Object> list()
               {
-                List<?> result = (List<?>) EbeanContext.server().find(field.getClass()).findList();
+                List<?> result = (List<?>) EbeanContext.server().find(fieldType).findList();
                 return (List<Object>) result;
               }
             };
@@ -313,7 +393,7 @@ public class EbeanPlugin extends PlayPlugin
               @SuppressWarnings("unchecked")
               public List<Object> list()
               {
-                List<?> result = (List<?>) EbeanContext.server().find(field.getClass()).findList();
+                List<?> result = (List<?>) EbeanContext.server().find(fieldType).findList();
                 return (List<Object>) result;
               }
             };
@@ -348,7 +428,7 @@ public class EbeanPlugin extends PlayPlugin
           if (!q.equals("")) {
             q += " or ";
           }
-          q += "lower(" + property.name + ") like ?1";
+          q += "lower(" + property.name + ") like :keywords";
         }
       }
       return q;

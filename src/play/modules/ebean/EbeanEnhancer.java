@@ -55,39 +55,43 @@ public class EbeanEnhancer extends Enhancer
         CtConstructor defaultConstructor = CtNewConstructor.make("private " + ctClass.getSimpleName() + "() {}", ctClass);
         ctClass.addConstructor(defaultConstructor);
       }
-    } catch (Exception e) {
-      Logger.error(e, "Error in EbeanEnhancer");
-      throw new UnexpectedException("Error in EbeanEnhancer", e);
+    } catch (Throwable t) {
+      Logger.error(t, "Error in EbeanEnhancer");
+      throw new UnexpectedException("Error in EbeanEnhancer", t);
     }
 
     // create     
-    CtMethod create = CtMethod.make("public static play.modules.ebean.EbeanSupport create(String name, play.mvc.Scope.Params params) { return create(" + entityName + ".class,name, params.all(), null); }",ctClass);   
-    ctClass.addMethod(create);
+    ctClass.addMethod(CtMethod.make("public static play.modules.ebean.EbeanSupport create(String name, play.mvc.Scope.Params params) { return create(" + entityName + ".class,name, params.all(), null); }",ctClass));
 
-    // deleteAll
-    CtMethod deleteAll = CtMethod.make("public static int deleteAll() { return  ebean().createUpdate(" + entityName + ".class, \"delete from " + ctClass.getSimpleName() + "\").execute(); }", ctClass);
-    ctClass.addMethod(deleteAll);
+    // count
+    ctClass.addMethod(CtMethod.make("public static long count() { return (long) ebean().createQuery(" + entityName + ".class).findRowCount(); }", ctClass));
+    ctClass.addMethod(CtMethod.make("public static long count(String query, Object[] params) { return (long) createQuery(" + entityName + ".class,query,params).findRowCount(); }", ctClass));
 
     // findAll
-    CtMethod findAll = CtMethod.make("public static java.util.List findAll() { return ebean().find(" + entityName + ".class).findList(); }", ctClass);
-    ctClass.addMethod(findAll);
+    ctClass.addMethod(CtMethod.make("public static java.util.List findAll() { return ebean().createQuery(" + entityName + ".class).findList(); }", ctClass));
 
     // findById
-    CtMethod findById = CtMethod.make("public static play.modules.ebean.EbeanSupport findById(Object id) { return (" + entityName + ") ebean().find(" + entityName + ".class, id); }", ctClass);
-    ctClass.addMethod(findById);
+    ctClass.addMethod(CtMethod.make("public static play.modules.ebean.EbeanSupport findById(Object id) { return (" + entityName + ") ebean().find(" + entityName + ".class, id); }", ctClass));
 
     // findUnique
-    CtMethod fundUnique = CtMethod.make("public static play.modules.ebean.EbeanSupport findUnique(String property, Object value, Object[] moreParams) { return findUnique(" + entityName + ".class, property,value, moreParams); }", ctClass);
-    ctClass.addMethod(fundUnique);
+    ctClass.addMethod(CtMethod.make("public static play.modules.ebean.EbeanSupport findUnique(String query, Object[] params) { return (" + entityName + ") createQuery(" + entityName + ".class,query,params).findUnique(); }", ctClass));
 
-    // query
-    CtMethod query = CtMethod.make("public static com.avaje.ebean.Query query() { return ebean().createQuery(" + entityName + ".class); }", ctClass);
-    ctClass.addMethod(query);
+    // find
+    ctClass.addMethod(CtMethod.make("public static com.avaje.ebean.Query find(String query, Object[] params) { return createQuery(" + entityName + ".class,query,params); }", ctClass));
+
+    // all
+    ctClass.addMethod(CtMethod.make("public static com.avaje.ebean.Query all() { return ebean().createQuery(" + entityName + ".class); }", ctClass));
+
+    // delete
+    ctClass.addMethod(CtMethod.make("public static int delete(String query, Object[] params) { return createDeleteQuery(" + entityName + ".class,query,params).execute(); }", ctClass));
+
+    // deleteAll
+    ctClass.addMethod(CtMethod.make("public static int deleteAll() { return  createDeleteQuery(" + entityName + ".class,null,null).execute(); }", ctClass));
 
     // Done.
     applicationClass.enhancedByteCode = ctClass.toBytecode();
     ctClass.defrost();
-
+    Logger.debug("EBEAN: Class '%s' has been enhanced",ctClass.getName());
   }
 
   static class PlayClassBytesReader implements ClassBytesReader
