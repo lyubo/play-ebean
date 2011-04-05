@@ -72,15 +72,12 @@ public class EbeanPlugin extends PlayPlugin
   }
 
   @Override
-  public void onLoad()
+  public void onConfigurationRead()
   {
-    // TODO: Hack! We have to change this once built-in plugins may be deactivated
-    for (PlayPlugin plugin : Play.plugins) {
-      if (plugin instanceof JPAPlugin) {
-        Logger.debug("EBEAN: Removing JPAPlugin in order to replace JPA implementation");
-        Play.plugins.remove(plugin);
-        break;
-      }
+    PlayPlugin jpaPlugin = Play.pluginCollection.getPluginInstance(JPAPlugin.class);
+    if (jpaPlugin != null && Play.pluginCollection.isEnabled(jpaPlugin)) {
+      Logger.debug("EBEAN: Disabling JPAPlugin in order to replace JPA implementation");
+      Play.pluginCollection.disablePlugin(jpaPlugin);
     }
   }
 
@@ -292,6 +289,11 @@ public class EbeanPlugin extends PlayPlugin
 
     public List<Property> listProperties()
     {
+      return listProperties(true);
+    }
+
+    private List<Property> listProperties(boolean includeTransient)
+    {
       List<Model.Property> properties = new ArrayList<Model.Property>();
       Set<Field> fields = new HashSet<Field>();
       Class<?> tclazz = modelClass;
@@ -303,6 +305,9 @@ public class EbeanPlugin extends PlayPlugin
         if (Modifier.isStatic(f.getModifiers()) || f.getName().toLowerCase().startsWith("_ebean")) {
           continue;
         }
+        if (!includeTransient && (Modifier.isTransient(f.getModifiers()) || f.getAnnotation(javax.persistence.Transient.class) != null)) {
+          continue;
+        }
         Model.Property mp = buildProperty(f);
         if (mp != null) {
           properties.add(mp);
@@ -310,7 +315,7 @@ public class EbeanPlugin extends PlayPlugin
       }
       return properties;
     }
-
+    
     private Field keyField()
     {
       Class<?> c = modelClass;
@@ -423,7 +428,7 @@ public class EbeanPlugin extends PlayPlugin
     String getSearchQuery(List<String> searchFields)
     {
       String q = "";
-      for (Model.Property property : listProperties()) {
+      for (Model.Property property : listProperties(false)) {
         if (property.isSearchable && (searchFields == null || searchFields.isEmpty() ? true : searchFields.contains(property.name))) {
           if (!q.equals("")) {
             q += " or ";
