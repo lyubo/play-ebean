@@ -33,6 +33,7 @@ import play.db.Model;
 import play.db.Model.Property;
 import play.db.jpa.JPAPlugin;
 import play.exceptions.UnexpectedException;
+import play.mvc.Http;
 import play.mvc.Http.Request;
 
 import com.avaje.ebean.EbeanServer;
@@ -95,16 +96,20 @@ public class EbeanPlugin extends PlayPlugin
   public void beforeInvocation()
   {
     EbeanServer server = defaultServer;
-    // Hook to introduce more data sources
-    Map<String, DataSource> ds = (Map<String, DataSource>) Request.current().args.get("dataSources");
-    if (ds != null) {
-      // Currently we support single data source
-      String firstKey = ds.keySet().iterator().next();
-      if (firstKey != null) {
-        server = SERVERS.get(firstKey);
-        if (server == null) {
-          server = createServer(firstKey, ds.get(firstKey));
-          SERVERS.put(firstKey, server);
+
+    Request currentRequest = Http.Request.current();
+    if (currentRequest != null) {
+      // Hook to introduce more data sources
+      Map<String, DataSource> ds = (Map<String, DataSource>) currentRequest.args.get("dataSources");
+      if (ds != null) {
+        // Currently we support single data source
+        String firstKey = ds.keySet().iterator().next();
+        if (firstKey != null) {
+          server = SERVERS.get(firstKey);
+          if (server == null) {
+            server = createServer(firstKey, ds.get(firstKey));
+            SERVERS.put(firstKey, server);
+          }
         }
       }
     }
