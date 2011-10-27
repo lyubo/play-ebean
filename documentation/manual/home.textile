@@ -7,7 +7,6 @@ h2. Getting started
 # Install the ebean module
 # add 'module.ebean=${play.path}/modules/ebean' in application.conf file 
 # Optionally create a file named "ebean.properties" in your application's conf directory. This is optional but if this file does not exist ebean will issue a warning messsage. See example applications and ebean documentation about usage of this file
-p(note). Describe any installation that is required, beyond adding and resolving the module dependency.
 
 h2. Usage
 
@@ -15,8 +14,7 @@ I'd tried to mimic the way standard JPAPlugin does the things. There's aEbeanSup
 
 However there are differences in usage of EbeanPlugin compared to standard JPAPlugin, the biggest being is that Ebean does not support JPA query. Here is what ebean documentation says:
 
-bc. Ebean has it's own query language. Prior to this decision JPQL (the JPA query language)
+p(note).  Ebean has it's own query language. Prior to this decision JPQL (the JPA query language)
 was investigated to see if it would meet the desired goals of Ebean and it did not.
-
-bc. Specifically I wanted to support “Partial Objects” via the query language and it is difficult
+Specifically I wanted to support “Partial Objects” via the query language and it is difficult
 to see how JPQL will evolve to support this (specifically difficulties around its select clause).
