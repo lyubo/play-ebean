@@ -1,6 +1,6 @@
 h1. play-ebean
 
-play-ebean module adds Ebean:http://http://www.avaje.org ORM to Play! Framework as an alternative to Hibernate. Currently we use this module in two applications  of my company, but I don't know if other has tested it. Since Ebean uses JPA annotations as Hibernate no change in model shuould be done in general.
+play-ebean module adds Ebean (http://www.avaje.org) ORM to Play! Framework as an alternative to Hibernate. Currently we use this module in two applications  of my company, but I don't know if other has tested it. Since Ebean uses JPA annotations as Hibernate no change in model shuould be done in general.
 
 h2. Getting started
 
