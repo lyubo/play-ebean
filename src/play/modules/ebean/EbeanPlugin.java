@@ -192,19 +192,16 @@ public class EbeanPlugin extends PlayPlugin
       this.modelClass = modelClass;
     }
 
-    @Override
     public String keyName()
     {
       return keyField().getName();
     }
 
-    @Override
     public Class<?> keyType()
     {
       return keyField().getType();
     }
 
-    @Override
     public Object keyValue(Model m)
     {
       try {
@@ -214,7 +211,6 @@ public class EbeanPlugin extends PlayPlugin
       }
     }
 
-    @Override
     public Model findById(Object id)
     {
       if (id == null) return null;
@@ -227,7 +223,6 @@ public class EbeanPlugin extends PlayPlugin
     }
 
     @SuppressWarnings("unchecked")
-    @Override
     public List<Model> fetch(int offset, int size, String orderBy, String order, List<String> searchFields, String keywords, String where)
     {
       Query<?> q = EbeanContext.server().createQuery(modelClass);
@@ -262,7 +257,6 @@ public class EbeanPlugin extends PlayPlugin
       return (List<Model>) q.findList();
     }
 
-    @Override
     public Long count(List<String> searchFields, String keywords, String where)
     {
       Query<?> q = EbeanContext.server().createQuery(modelClass);
@@ -284,7 +278,6 @@ public class EbeanPlugin extends PlayPlugin
       return Long.valueOf(q.findRowCount());
     }
 
-    @Override
     public void deleteAll()
     {
       String query = "delete from " + modelClass.getSimpleName();

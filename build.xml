@@ -15,7 +15,8 @@
 				<include name="lib/ebean-${ebean.version}.jar" />
 				<include name="lib/play-ebean*.jar" />
 				<include name="src/**" />
-				<include name="ebean-*.zip" />
+				<include name="documentation/**" />
+				<include name="sample/**" />
 		   </fileset>
 			<fileset dir="${basedir}/tmp">
 				<include name="manifest" />

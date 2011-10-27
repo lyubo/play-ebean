@@ -254,21 +254,18 @@ public class EbeanSupport implements play.db.Model
     return new UnsupportedOperationException("Please annotate your JPA model with @javax.persistence.Entity annotation.");
   }
 
-  @Override
   public void _save()
   {
     ebean().save(this);
     PlayPlugin.postEvent("JPASupport.objectPersisted", this);
   }
 
-  @Override
   public void _delete()
   {
     ebean().delete(this);
     PlayPlugin.postEvent("JPASupport.objectDeleted", this);
   }
 
-  @Override
   public Object _key()
   {
     return Model.Manager.factoryFor(this.getClass()).keyValue(this);
