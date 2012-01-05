@@ -135,7 +135,12 @@ public class EbeanPlugin extends PlayPlugin
   @Override
   public void invocationFinally()
   {
-    EbeanServer ebean = EbeanContext.server();
+    EbeanServer ebean = null;
+    try {
+      ebean = EbeanContext.server();
+    } catch(IllegalStateException e) {
+      Logger.error(e, "EbeanPlugin ending transaction in finally");
+    }
     if (ebean != null) ebean.endTransaction();
     EbeanContext.set(null);
   }
