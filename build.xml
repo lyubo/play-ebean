@@ -1,14 +1,15 @@
 <project name="JAR File Builder" default="dist" basedir=".">
 
+	<property name="play.version" value="1.2.4" />
 	<property name="ebean.version" value="2.7.4" />
-	<property name="version" value="1.0.5" />
-	<property name="play.home" value="/usr/local/play" />
+	<property name="version" value="1.0.6" />
+	<property name="play.home" value="/usr/local/play-${play.version}" />
 
 	<taskdef name="ebeanEnhance" classname="com.avaje.ebean.enhance.ant.AntEnhanceTask" classpath="${basedir}/lib/ebean-${ebean.version}-agent.jar" />
 
 	<target name="dist" depends="clean,compile">
 		<jar jarfile="${basedir}/lib/play-ebean.jar" basedir="${basedir}/tmp" />
-		<echo file="${basedir}/tmp/manifest" message="version=${version}${line.separator}frameworkVersions=1.1" />
+		<echo file="${basedir}/tmp/manifest" message="version=${version}${line.separator}frameworkVersions=1.2" />
 		<mkdir dir="${basedir}/dist" />
 		<zip destfile="${basedir}/dist/ebean-${version}.zip">
 			<fileset dir="${basedir}">
@@ -37,7 +38,7 @@
 				<fileset dir="lib">
 					<include name="ebean-${ebean.version}.jar" />
 				</fileset>
-				<fileset dir="/usr/local/play/framework">
+				<fileset dir="${play.home}/framework">
 					<include name="**/*.jar" />
 				</fileset>
 			</classpath>
@@ -47,7 +48,7 @@
 				<exclude name="**/*.java" />
 			</fileset>
 		</copy>
-		<ebeanEnhance classpath="${play.home}/framework/play.jar" classSource="${basedir}/tmp" packages="play/modules/ebean" transformArgs="transientInternalFields=true;debug=1" />
+		<ebeanEnhance classpath="${play.home}/framework/play-${play.version}.jar" classSource="${basedir}/tmp" packages="play/modules/ebean" transformArgs="transientInternalFields=true;debug=1" />
 	</target>
 
 </project>

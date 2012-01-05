@@ -44,11 +44,11 @@ import com.avaje.ebean.config.ServerConfig;
 
 public class EbeanPlugin extends PlayPlugin
 {
-  public static EbeanServer              defaultServer;
-  public static Map<String, EbeanServer> SERVERS = new HashMap<String,EbeanServer>();
+  private static EbeanServer              defaultServer;
+  private static Map<String, EbeanServer> SERVERS = new HashMap<String,EbeanServer>();
 
   @SuppressWarnings({ "unchecked", "rawtypes" })
-  public static EbeanServer createServer(String name, DataSource dataSource)
+  private static EbeanServer createServer(String name, DataSource dataSource)
   {
     EbeanServer result = null;
     ServerConfig cfg = new ServerConfig();
@@ -67,6 +67,21 @@ public class EbeanPlugin extends PlayPlugin
     return result;
   }
 
+  protected static EbeanServer checkServer(String name, DataSource ds)
+  {
+    EbeanServer server = null;
+    if (name != null) {
+      synchronized (SERVERS) {
+        server = SERVERS.get(name);
+        if (server == null) {
+          server = createServer(name, ds);
+          SERVERS.put(name, server);
+        }
+      }
+    }
+    return server;
+  }
+  
   public EbeanPlugin()
   {
     super();
@@ -101,16 +116,10 @@ public class EbeanPlugin extends PlayPlugin
     if (currentRequest != null) {
       // Hook to introduce more data sources
       Map<String, DataSource> ds = (Map<String, DataSource>) currentRequest.args.get("dataSources");
-      if (ds != null) {
+      if (ds != null && ds.size() > 0) {
         // Currently we support single data source
-        String firstKey = ds.keySet().iterator().next();
-        if (firstKey != null) {
-          server = SERVERS.get(firstKey);
-          if (server == null) {
-            server = createServer(firstKey, ds.get(firstKey));
-            SERVERS.put(firstKey, server);
-          }
-        }
+        Map.Entry<String,DataSource> firstEntry = ds.entrySet().iterator().next();
+        server = checkServer(firstEntry.getKey(),firstEntry.getValue());
       }
     }
     EbeanContext.set(server);
