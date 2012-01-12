@@ -8,13 +8,13 @@
 	<taskdef name="ebeanEnhance" classname="com.avaje.ebean.enhance.ant.AntEnhanceTask" classpath="${basedir}/lib/ebean-${ebean.version}-agent.jar" />
 
 	<target name="dist" depends="clean,compile">
-		<jar jarfile="${basedir}/lib/play-ebean.jar" basedir="${basedir}/tmp" />
+		<jar jarfile="${basedir}/lib/play-ebean-${version}.jar" basedir="${basedir}/tmp" />
 		<echo file="${basedir}/tmp/manifest" message="version=${version}${line.separator}frameworkVersions=1.2" />
 		<mkdir dir="${basedir}/dist" />
 		<zip destfile="${basedir}/dist/ebean-${version}.zip">
 			<fileset dir="${basedir}">
 				<include name="lib/ebean-${ebean.version}.jar" />
-				<include name="lib/play-ebean*.jar" />
+				<include name="lib/play-ebean-${version}.jar" />
 				<include name="src/**" />
 				<include name="documentation/**" />
 				<include name="sample/**" />
@@ -27,7 +27,7 @@
 	</target>
 
 	<target name="clean">
-		<delete file="${basedir}/lib/play-ebean.jar" />
+		<delete dir="${basedir}/lib/" includes="play-ebean*.jar"/>
 		<delete dir="${basedir}/dist" />
 	</target>
 
