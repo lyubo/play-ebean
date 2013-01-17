@@ -107,6 +107,13 @@ public class EbeanPlugin extends PlayPlugin
   }
 
   @Override
+  public void onApplicationStop()
+  {
+    Logger.debug("EBEAN: close all servers");
+    SERVERS.clear();
+  }
+
+  @Override
   @SuppressWarnings("unchecked")
   public void beforeInvocation()
   {
