@@ -23,12 +23,12 @@
 				<include name="manifest" />
 			</fileset>
 		</zip>
-		<delete dir="${basedir}/tmp" />
 	</target>
 
 	<target name="clean">
 		<delete dir="${basedir}/lib/" includes="play-ebean*.jar"/>
 		<delete dir="${basedir}/dist" />
+		<delete dir="${basedir}/tmp" />
 	</target>
 
 	<target name="compile">
