@@ -1,0 +1,17 @@
+require:
+    - play [1.2.4,1.4[
+    - play -> secure
+    - play -> crud
+
+    - play-ebean -> ebean latest.integration
+
+# in case of PostgreSQL
+#    - org.postgresql -> postgresql 42.2.2.jre6: # PostgreSQL 9.6 server is too new for PostgreSQL 9.0 client shipped with Play 1.2.x, and the ".jre6" suffix is required to be compatible with JDK6
+#        force: true
+
+repositories:
+    - localCheckout:
+       type: local
+       artifact: ${application.path}/../../dist/[artifact]-[revision].zip
+       contains:
+        - play-ebean -> ebean *
