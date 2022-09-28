@@ -1,0 +1,6 @@
+# Ignore samples and tests
+/samples-and-tests/*/logs/
+/samples-and-tests/*/modules/
+/samples-and-tests/*/precompiled/
+/samples-and-tests/*/test-result/
+/samples-and-tests/*/tmp/

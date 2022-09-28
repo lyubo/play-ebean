@@ -18,6 +18,11 @@
 				<include name="src/**" />
 				<include name="documentation/**" />
 				<include name="samples-and-tests/**" />
+				<exclude name="samples-and-tests/*/logs/**"/>
+				<exclude name="samples-and-tests/*/modules/**"/>
+				<exclude name="samples-and-tests/*/precompiled/**"/>
+				<exclude name="samples-and-tests/*/test-result/**"/>
+				<exclude name="samples-and-tests/*/tmp/**"/>
 		   </fileset>
 			<fileset dir="${basedir}/tmp">
 				<include name="manifest" />
