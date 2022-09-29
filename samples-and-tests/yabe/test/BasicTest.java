@@ -45,7 +45,7 @@ public class BasicTest extends UnitTest {
       User bob = new User("bob@gmail.com", "secret", "Bob").save();
 
       // Create a new post
-      new Post(bob, "My first post", "Hello world").save();
+      Post newPost = new Post(bob, "My first post", "Hello world").save();
 
       // Test that the post has been created
       assertEquals(1, Post.count());
@@ -57,6 +57,11 @@ public class BasicTest extends UnitTest {
       assertEquals(1, bobPosts.size());
       Post firstPost = bobPosts.get(0);
       assertNotNull(firstPost);
+      //assertNotEquals(newPost, firstPost);
+      newPost = Post.findById(newPost.getId());
+      assertEquals(newPost, firstPost);
+      //assertNotEquals(bob, firstPost.getAuthor());
+      bob = User.findById(bob.getId());
       assertEquals(bob, firstPost.getAuthor());
       assertEquals("My first post", firstPost.getTitle());
       assertEquals("Hello world", firstPost.getContent());
