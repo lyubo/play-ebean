@@ -10,6 +10,13 @@
 	<target name="dist" depends="clean,compile">
 		<jar jarfile="${basedir}/lib/play-ebean-${version}.jar" basedir="${basedir}/tmp" />
 		<echo file="${basedir}/tmp/manifest" message="version=${version}${line.separator}frameworkVersions=1.2" />
+		<replaceregexp
+				match="- play-ebean -> ebean latest.integration"
+				replace="- play-yubo -> ebean ${version}"
+				flags="g" byline="true"
+		>
+			<fileset dir="samples-and-tests" includes="*/conf/dependencies.yml" />
+		</replaceregexp>
 		<mkdir dir="${basedir}/dist" />
 		<zip destfile="${basedir}/dist/ebean-${version}.zip">
 			<fileset dir="${basedir}">
@@ -28,6 +35,13 @@
 				<include name="manifest" />
 			</fileset>
 		</zip>
+		<replaceregexp
+				replace="- play-ebean -> ebean latest.integration"
+				match="- play-yubo -> ebean ${version}"
+				flags="g" byline="true"
+		>
+			<fileset dir="samples-and-tests" includes="*/conf/dependencies.yml" />
+		</replaceregexp>
 	</target>
 
 	<target name="clean">

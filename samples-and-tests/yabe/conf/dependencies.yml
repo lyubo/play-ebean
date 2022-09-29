@@ -15,3 +15,8 @@ repositories:
        artifact: ${application.path}/../../dist/[artifact]-[revision].zip
        contains:
         - play-ebean -> ebean *
+    - yubo:
+        type: http
+        artifact: https://github.com/yubo/play-[module]/releases/download/v[revision]/[module]-[revision].zip
+        contains:
+          - play-yubo -> ebean *
