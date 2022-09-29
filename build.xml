@@ -1,6 +1,7 @@
 <project name="JAR File Builder" default="dist" basedir=".">
 
 	<property name="play.version" value="1.2.4" />
+	<property name="java.release.version" value="6" />
 	<property name="ebean.version" value="2.7.4" />
 	<property name="version" value="1.0.7RC1" />
 	<property name="play.home" value="/usr/local/play-${play.version}" />
@@ -50,9 +51,11 @@
 		<delete dir="${basedir}/tmp" />
 	</target>
 
-	<target name="compile">
+	<target name="compile" depends="print-java-version,check-java-version">
 		<mkdir dir="${basedir}/tmp" />
 		<javac srcdir="${basedir}/src" destdir="${basedir}/tmp" debug="yes">
+		<!--<javac srcdir="${basedir}/src" destdir="${basedir}/tmp" debug="yes" release="${java.release.version}">-->
+			<compilerarg value="-Xlint:deprecation"/>
 			<classpath>
 				<fileset dir="lib">
 					<include name="ebean-${ebean.version}.jar" />
@@ -135,6 +138,28 @@
 				</not>
 			</condition>
 		</fail>
+	</target>
+
+	<target name="print-java-version">
+		<echo>Java/JVM version: ${ant.java.version}</echo>
+		<echo>Java/JVM detail version: ${java.version}</echo>
+	</target>
+
+	<target name="require-java-version">
+		<condition property="has.java.version">
+			<!--<not>
+				<or>
+					<equals arg1="${ant.java.version}" arg2="9"/>
+					<equals arg1="${ant.java.version}" arg2="10"/>
+				</or>
+			</not>-->
+			<equals arg1="${ant.java.version}" arg2="1.${java.release.version}"/>
+		</condition>
+	</target>
+
+	<target name="check-java-version" depends="require-java-version" unless="has.java.version">
+		<fail message="Unsupported Java version: ${ant.java.version}.
+		Make sure that the Java version is ${java.release.version}."/>
 	</target>
 
 </project>
