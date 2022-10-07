@@ -1,6 +1,7 @@
 <project name="JAR File Builder" default="dist" basedir=".">
 
 	<property name="play.version" value="1.2.4" />
+	<property name="java.release.version" value="6" />
 	<property name="ebean.version" value="2.7.4" />
 	<property name="version" value="1.0.7RC1" />
 	<property name="play.home" value="/usr/local/play-${play.version}" />
@@ -10,6 +11,13 @@
 	<target name="dist" depends="clean,compile">
 		<jar jarfile="${basedir}/lib/play-ebean-${version}.jar" basedir="${basedir}/tmp" />
 		<echo file="${basedir}/tmp/manifest" message="version=${version}${line.separator}frameworkVersions=1.2" />
+		<replaceregexp
+				match="- play-ebean -> ebean latest.integration"
+				replace="- play-yubo -> ebean ${version}"
+				flags="g" byline="true"
+		>
+			<fileset dir="samples-and-tests" includes="*/conf/dependencies.yml" />
+		</replaceregexp>
 		<mkdir dir="${basedir}/dist" />
 		<zip destfile="${basedir}/dist/ebean-${version}.zip">
 			<fileset dir="${basedir}">
@@ -17,23 +25,37 @@
 				<include name="lib/play-ebean-${version}.jar" />
 				<include name="src/**" />
 				<include name="documentation/**" />
-				<include name="sample/**" />
+				<include name="samples-and-tests/**" />
+				<exclude name="samples-and-tests/*/logs/**"/>
+				<exclude name="samples-and-tests/*/modules/**"/>
+				<exclude name="samples-and-tests/*/precompiled/**"/>
+				<exclude name="samples-and-tests/*/test-result/**"/>
+				<exclude name="samples-and-tests/*/tmp/**"/>
 		   </fileset>
 			<fileset dir="${basedir}/tmp">
 				<include name="manifest" />
 			</fileset>
 		</zip>
-		<delete dir="${basedir}/tmp" />
+		<replaceregexp
+				replace="- play-ebean -> ebean latest.integration"
+				match="- play-yubo -> ebean ${version}"
+				flags="g" byline="true"
+		>
+			<fileset dir="samples-and-tests" includes="*/conf/dependencies.yml" />
+		</replaceregexp>
 	</target>
 
 	<target name="clean">
 		<delete dir="${basedir}/lib/" includes="play-ebean*.jar"/>
 		<delete dir="${basedir}/dist" />
+		<delete dir="${basedir}/tmp" />
 	</target>
 
-	<target name="compile">
+	<target name="compile" depends="print-java-version,check-java-version">
 		<mkdir dir="${basedir}/tmp" />
 		<javac srcdir="${basedir}/src" destdir="${basedir}/tmp" debug="yes">
+		<!--<javac srcdir="${basedir}/src" destdir="${basedir}/tmp" debug="yes" release="${java.release.version}">-->
+			<compilerarg value="-Xlint:deprecation"/>
 			<classpath>
 				<fileset dir="lib">
 					<include name="ebean-${ebean.version}.jar" />
@@ -49,6 +71,95 @@
 			</fileset>
 		</copy>
 		<ebeanEnhance classpath="${play.home}/framework/play-${play.version}.jar" classSource="${basedir}/tmp" packages="play/modules/ebean" transformArgs="transientInternalFields=true;debug=1" />
+	</target>
+
+	<target name="test" depends="dist,test-zencontact,test-yabe" description="run test suite">
+		<antcall target="test-success" />
+	</target>
+
+	<target name="test-zencontact">
+		<antcall target="play-test">
+			<param name="testAppPath" value="${basedir}/samples-and-tests/zencontact"/>
+		</antcall>
+	</target>
+	<target name="test-yabe">
+		<antcall target="play-test">
+			<param name="testAppPath" value="${basedir}/samples-and-tests/yabe"/>
+		</antcall>
+	</target>
+
+	<target name="check-dependencies-file">
+		<available file="${testAppPath}/conf/dependencies.yml" property="dependencies.present"/>
+	</target>
+
+	<target name="do-deps" depends="check-dependencies-file" if="dependencies.present">
+		<delete failonerror="false" includeemptydirs="true">
+			<fileset dir="${testAppPath}/modules" includes="**/*"/>
+		</delete>
+		<exec executable="${play.home}/play" failonerror="false" spawn="false">
+			<arg value="deps"/>
+			<arg value="${testAppPath}"/>
+			<arg value="--sync"/>
+		</exec>
+	</target>
+
+	<target name="play-auto-test">
+		<echo message="play auto-test ${testAppPath} (wait)" />
+		<delete failonerror="false" includeemptydirs="true">
+			<fileset dir="${testAppPath}/logs" includes="**/*"/>
+			<fileset dir="${testAppPath}/precompiled" includes="**/*"/>
+			<fileset dir="${testAppPath}/test-result" includes="**/*"/>
+			<fileset dir="${testAppPath}/tmp" includes="**/*"/>
+		</delete>
+		<exec executable="${play.home}/play" failonerror="true" dir="${testAppPath}">
+			<arg value="auto-test"/>
+		</exec>
+	</target>
+
+	<target name="test-success">
+		<echo message="*****************" />
+		<echo message="All test passed !" />
+		<echo message="*****************" />
+	</target>
+
+	<target name="play-test">
+		<antcall target="do-deps">
+			<param name="testAppPath" value="${testAppPath}"/>
+		</antcall>
+		<antcall target="play-auto-test">
+			<param name="play.path" value="${play.home}"/>
+			<param name="testAppPath" value="${testAppPath}"/>
+		</antcall>
+		<available file="${testAppPath}/test-result/result.passed" property="${testAppPath}testPassed" />
+		<fail message="Last test has failed ! (Check results in file://${testAppPath}/test-result)">
+			<condition>
+				<not>
+					<isset property="${testAppPath}testPassed"/>
+				</not>
+			</condition>
+		</fail>
+	</target>
+
+	<target name="print-java-version">
+		<echo>Java/JVM version: ${ant.java.version}</echo>
+		<echo>Java/JVM detail version: ${java.version}</echo>
+	</target>
+
+	<target name="require-java-version">
+		<condition property="has.java.version">
+			<!--<not>
+				<or>
+					<equals arg1="${ant.java.version}" arg2="9"/>
+					<equals arg1="${ant.java.version}" arg2="10"/>
+				</or>
+			</not>-->
+			<equals arg1="${ant.java.version}" arg2="1.${java.release.version}"/>
+		</condition>
+	</target>
+
+	<target name="check-java-version" depends="require-java-version" unless="has.java.version">
+		<fail message="Unsupported Java version: ${ant.java.version}.
+		Make sure that the Java version is ${java.release.version}."/>
 	</target>
 
 </project>
