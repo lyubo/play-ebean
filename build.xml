@@ -6,11 +6,11 @@
 	<property name="version" value="1.0.7RC1" />
 	<property name="play.home" value="/usr/local/play-${play.version}" />
 
-	<taskdef name="ebeanEnhance" classname="com.avaje.ebean.enhance.ant.AntEnhanceTask" classpath="${basedir}/lib/ebean-${ebean.version}-agent.jar" />
+	<taskdef name="ebeanEnhance" classname="com.avaje.ebean.enhance.ant.AntEnhanceTask" classpath="lib/ebean-${ebean.version}-agent.jar" />
 
 	<target name="dist" depends="clean,compile">
-		<jar jarfile="${basedir}/lib/play-ebean-${version}.jar" basedir="${basedir}/tmp" />
-		<echo file="${basedir}/tmp/manifest" message="version=${version}${line.separator}frameworkVersions=1.2" />
+		<jar jarfile="lib/play-ebean-${version}.jar" basedir="tmp" />
+		<echo file="tmp/manifest" message="version=${version}${line.separator}frameworkVersions=1.2" />
 		<replaceregexp
 				match="- play-ebean -> ebean latest.integration"
 				replace="- play-yubo -> ebean ${version}"
@@ -18,8 +18,8 @@
 		>
 			<fileset dir="samples-and-tests" includes="*/conf/dependencies.yml" />
 		</replaceregexp>
-		<mkdir dir="${basedir}/dist" />
-		<zip destfile="${basedir}/dist/ebean-${version}.zip">
+		<mkdir dir="dist" />
+		<zip destfile="dist/ebean-${version}.zip">
 			<fileset dir="${basedir}">
 				<include name="lib/ebean-${ebean.version}.jar" />
 				<include name="lib/play-ebean-${version}.jar" />
@@ -32,7 +32,7 @@
 				<exclude name="samples-and-tests/*/test-result/**"/>
 				<exclude name="samples-and-tests/*/tmp/**"/>
 		   </fileset>
-			<fileset dir="${basedir}/tmp">
+			<fileset dir="tmp">
 				<include name="manifest" />
 			</fileset>
 		</zip>
@@ -46,15 +46,15 @@
 	</target>
 
 	<target name="clean">
-		<delete dir="${basedir}/lib/" includes="play-ebean*.jar"/>
-		<delete dir="${basedir}/dist" />
-		<delete dir="${basedir}/tmp" />
+		<delete dir="lib/" includes="play-ebean*.jar"/>
+		<delete dir="dist" />
+		<delete dir="tmp" />
 	</target>
 
 	<target name="compile" depends="print-java-version,check-java-version">
-		<mkdir dir="${basedir}/tmp" />
-		<javac srcdir="${basedir}/src" destdir="${basedir}/tmp" debug="yes">
-		<!--<javac srcdir="${basedir}/src" destdir="${basedir}/tmp" debug="yes" release="${java.release.version}">-->
+		<mkdir dir="tmp" />
+		<javac srcdir="src" destdir="tmp" debug="yes">
+		<!--<javac srcdir="src" destdir="tmp" debug="yes" release="${java.release.version}">-->
 			<compilerarg value="-Xlint:deprecation"/>
 			<classpath>
 				<fileset dir="lib">
@@ -65,12 +65,12 @@
 				</fileset>
 			</classpath>
 		</javac>
-		<copy todir="${basedir}/tmp">
-			<fileset dir="${basedir}/src">
+		<copy todir="tmp">
+			<fileset dir="src">
 				<exclude name="**/*.java" />
 			</fileset>
 		</copy>
-		<ebeanEnhance classpath="${play.home}/framework/play-${play.version}.jar" classSource="${basedir}/tmp" packages="play/modules/ebean" transformArgs="transientInternalFields=true;debug=1" />
+		<ebeanEnhance classpath="${play.home}/framework/play-${play.version}.jar" classSource="tmp" packages="play/modules/ebean" transformArgs="transientInternalFields=true;debug=1" />
 	</target>
 
 	<target name="test" depends="dist,test-zencontact,test-yabe" description="run test suite">
@@ -79,12 +79,12 @@
 
 	<target name="test-zencontact">
 		<antcall target="play-test">
-			<param name="testAppPath" value="${basedir}/samples-and-tests/zencontact"/>
+			<param name="testAppPath" value="samples-and-tests/zencontact"/>
 		</antcall>
 	</target>
 	<target name="test-yabe">
 		<antcall target="play-test">
-			<param name="testAppPath" value="${basedir}/samples-and-tests/yabe"/>
+			<param name="testAppPath" value="samples-and-tests/yabe"/>
 		</antcall>
 	</target>
 
