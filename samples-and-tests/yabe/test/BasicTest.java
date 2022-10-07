@@ -1,4 +1,5 @@
 import org.junit.*;
+import static org.hamcrest.CoreMatchers.*;
 import java.util.*;
 
 import play.modules.ebean.EbeanContext;
@@ -57,10 +58,10 @@ public class BasicTest extends UnitTest {
       assertEquals(1, bobPosts.size());
       Post firstPost = bobPosts.get(0);
       assertNotNull(firstPost);
-      //assertNotEquals(newPost, firstPost);
+      assertThat(newPost, not(equalTo(firstPost)));
       newPost = Post.findById(newPost.getId());
       assertEquals(newPost, firstPost);
-      //assertNotEquals(bob, firstPost.getAuthor());
+      assertThat(bob, not(equalTo(firstPost.getAuthor())));
       bob = User.findById(bob.getId());
       assertEquals(bob, firstPost.getAuthor());
       assertEquals("My first post", firstPost.getTitle());
