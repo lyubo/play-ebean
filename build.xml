@@ -6,7 +6,7 @@
 	<property name="version" value="1.0.7RC1" />
 	<property name="play.home" value="/usr/local/play-${play.version}" />
 
-	<taskdef name="ebeanEnhance" classname="com.avaje.ebean.enhance.ant.AntEnhanceTask" classpath="lib/ebean-${ebean.version}-agent.jar" />
+	<taskdef name="ebeanEnhance" classname="com.avaje.ebean.enhance.ant.AntEnhanceTask" classpath="lib/ebean-${ebean.version}.jar" />
 
 	<target name="dist" depends="clean,compile">
 		<jar jarfile="lib/play-ebean-${version}.jar" basedir="tmp" />
