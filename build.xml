@@ -6,10 +6,22 @@
 	<property name="module.version" value="1.0.7RC1" />
 	<property name="play.path" value="/usr/local/play-${play.version}" />
 
-	<taskdef name="ebeanEnhance" classname="com.avaje.ebean.enhance.ant.AntEnhanceTask" classpath="lib/ebean-${ebean.version}.jar" />
+	<path id="project.classpath">
+		<pathelement path="${play.path}/framework/classes"/>
+		<fileset dir="${play.path}/framework/lib">
+			<include name="*.jar"/>
+		</fileset>
+		<fileset dir="${play.path}/framework">
+			<include name="*.jar"/>
+		</fileset>
+		<fileset dir="lib">
+			<include name="*.jar"/>
+		</fileset>
+	</path>
 
-	<target name="dist" depends="clean,compile">
-		<jar jarfile="lib/play-ebean-${module.version}.jar" basedir="tmp" />
+	<taskdef name="ebeanEnhance" classname="com.avaje.ebean.enhance.ant.AntEnhanceTask" classpathref="project.classpath" />
+
+	<target name="dist" depends="clean,build">
 		<echo file="tmp/manifest" message="version=${module.version}${line.separator}frameworkVersions=1.2" />
 		<replaceregexp
 				match="- play-ebean -> ebean latest.integration"
@@ -52,25 +64,22 @@
 	</target>
 
 	<target name="compile" depends="print-java-version,check-java-version">
-		<mkdir dir="tmp" />
-		<javac srcdir="src" destdir="tmp" debug="yes">
-		<!--<javac srcdir="src" destdir="tmp" debug="yes" release="${java.release.version}">-->
+		<mkdir dir="tmp/classes" />
+		<javac srcdir="src" destdir="tmp/classes" debug="yes">
+		<!--<javac srcdir="src" destdir="tmp/classes" debug="yes" release="${java.release.version}">-->
 			<compilerarg value="-Xlint:deprecation"/>
-			<classpath>
-				<fileset dir="lib">
-					<include name="ebean-${ebean.version}.jar" />
-				</fileset>
-				<fileset dir="${play.path}/framework">
-					<include name="**/*.jar" />
-				</fileset>
-			</classpath>
+			<classpath refid="project.classpath"/>
 		</javac>
-		<copy todir="tmp">
+		<copy todir="tmp/classes">
 			<fileset dir="src">
 				<exclude name="**/*.java" />
 			</fileset>
 		</copy>
-		<ebeanEnhance classpath="${play.path}/framework/play-${play.version}.jar" classSource="tmp" packages="play/modules/ebean" transformArgs="transientInternalFields=true;debug=1" />
+		<ebeanEnhance classSource="tmp/classes" packages="play/modules/ebean" transformArgs="transientInternalFields=true;debug=1" />
+	</target>
+
+	<target name="build" depends="compile">
+		<jar jarfile="lib/play-ebean-${module.version}.jar" basedir="tmp/classes" />
 	</target>
 
 	<target name="test" depends="dist,test-zencontact,test-yabe" description="run test suite">
