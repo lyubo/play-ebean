@@ -64,6 +64,9 @@
 	</target>
 
 	<target name="compile" depends="print-java-version,check-java-version">
+		<antcall target="do-deps">
+			<param name="testAppPath" value="${basedir}"/>
+		</antcall>
 		<mkdir dir="tmp/classes" />
 		<javac srcdir="src" destdir="tmp/classes" debug="yes">
 		<!--<javac srcdir="src" destdir="tmp/classes" debug="yes" release="${java.release.version}">-->
