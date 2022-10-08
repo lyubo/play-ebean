@@ -1,28 +1,28 @@
-<project name="JAR File Builder" default="dist" basedir=".">
+<project name="ebean" default="dist" basedir=".">
 
 	<property name="play.version" value="1.2.4" />
 	<property name="java.release.version" value="6" />
 	<property name="ebean.version" value="2.7.4" />
-	<property name="version" value="1.0.7RC1" />
+	<property name="module.version" value="1.0.7RC1" />
 	<property name="play.path" value="/usr/local/play-${play.version}" />
 
 	<taskdef name="ebeanEnhance" classname="com.avaje.ebean.enhance.ant.AntEnhanceTask" classpath="lib/ebean-${ebean.version}.jar" />
 
 	<target name="dist" depends="clean,compile">
-		<jar jarfile="lib/play-ebean-${version}.jar" basedir="tmp" />
-		<echo file="tmp/manifest" message="version=${version}${line.separator}frameworkVersions=1.2" />
+		<jar jarfile="lib/play-ebean-${module.version}.jar" basedir="tmp" />
+		<echo file="tmp/manifest" message="version=${module.version}${line.separator}frameworkVersions=1.2" />
 		<replaceregexp
 				match="- play-ebean -> ebean latest.integration"
-				replace="- play-yubo -> ebean ${version}"
+				replace="- play-yubo -> ebean ${module.version}"
 				flags="g" byline="true"
 		>
 			<fileset dir="samples-and-tests" includes="*/conf/dependencies.yml" />
 		</replaceregexp>
 		<mkdir dir="dist" />
-		<zip destfile="dist/ebean-${version}.zip">
+		<zip destfile="dist/ebean-${module.version}.zip">
 			<fileset dir="${basedir}">
 				<include name="lib/ebean-${ebean.version}.jar" />
-				<include name="lib/play-ebean-${version}.jar" />
+				<include name="lib/play-ebean-${module.version}.jar" />
 				<include name="src/**" />
 				<include name="documentation/**" />
 				<include name="samples-and-tests/**" />
@@ -38,7 +38,7 @@
 		</zip>
 		<replaceregexp
 				replace="- play-ebean -> ebean latest.integration"
-				match="- play-yubo -> ebean ${version}"
+				match="- play-yubo -> ebean ${module.version}"
 				flags="g" byline="true"
 		>
 			<fileset dir="samples-and-tests" includes="*/conf/dependencies.yml" />
