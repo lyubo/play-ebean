@@ -19,7 +19,9 @@
 		</fileset>
 	</path>
 
-	<taskdef name="ebeanEnhance" classname="com.avaje.ebean.enhance.ant.AntEnhanceTask" classpathref="project.classpath" />
+	<target name="init">
+		<taskdef name="ebeanEnhance" classname="com.avaje.ebean.enhance.ant.AntEnhanceTask" classpathref="project.classpath" />
+	</target>
 
 	<target name="dist" depends="clean,build">
 		<echo file="tmp/manifest" message="version=${module.version}${line.separator}frameworkVersions=1.2" />
@@ -63,7 +65,28 @@
 		<delete dir="tmp" />
 	</target>
 
-	<target name="compile" depends="print-java-version,check-java-version">
+	<target name="sync-one-entry-in-dependencies">
+		<echo message="adding ${replace}"/>
+		<replaceregexp
+				match="${match}"
+				replace="${replace}"
+				flags="g" byline="true"
+				file="conf/dependencies.yml"
+		/>
+	</target>
+
+	<target name="sync-dependencies">
+		<antcall target="sync-one-entry-in-dependencies">
+			<param name="match" value="self: play -> ebean .*"/>
+			<param name="replace" value="self: play -> ebean ${module.version}"/>
+		</antcall>
+		<antcall target="sync-one-entry-in-dependencies">
+			<param name="match" value="- org.avaje -> ebean .*"/>
+			<param name="replace" value="- org.avaje -> ebean ${ebean.version}"/>
+		</antcall>
+	</target>
+
+	<target name="compile" depends="print-java-version,check-java-version,sync-dependencies,init">
 		<antcall target="do-deps">
 			<param name="testAppPath" value="${basedir}"/>
 		</antcall>
