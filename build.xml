@@ -4,7 +4,7 @@
 	<property name="java.release.version" value="6" />
 	<property name="ebean.version" value="2.7.4" />
 	<property name="version" value="1.0.7RC1" />
-	<property name="play.home" value="/usr/local/play-${play.version}" />
+	<property name="play.path" value="/usr/local/play-${play.version}" />
 
 	<taskdef name="ebeanEnhance" classname="com.avaje.ebean.enhance.ant.AntEnhanceTask" classpath="lib/ebean-${ebean.version}.jar" />
 
@@ -60,7 +60,7 @@
 				<fileset dir="lib">
 					<include name="ebean-${ebean.version}.jar" />
 				</fileset>
-				<fileset dir="${play.home}/framework">
+				<fileset dir="${play.path}/framework">
 					<include name="**/*.jar" />
 				</fileset>
 			</classpath>
@@ -70,7 +70,7 @@
 				<exclude name="**/*.java" />
 			</fileset>
 		</copy>
-		<ebeanEnhance classpath="${play.home}/framework/play-${play.version}.jar" classSource="tmp" packages="play/modules/ebean" transformArgs="transientInternalFields=true;debug=1" />
+		<ebeanEnhance classpath="${play.path}/framework/play-${play.version}.jar" classSource="tmp" packages="play/modules/ebean" transformArgs="transientInternalFields=true;debug=1" />
 	</target>
 
 	<target name="test" depends="dist,test-zencontact,test-yabe" description="run test suite">
@@ -96,7 +96,7 @@
 		<delete failonerror="false" includeemptydirs="true">
 			<fileset dir="${testAppPath}/modules" includes="**/*"/>
 		</delete>
-		<exec executable="${play.home}/play" failonerror="false" spawn="false">
+		<exec executable="${play.path}/play" failonerror="false" spawn="false">
 			<arg value="deps"/>
 			<arg value="${testAppPath}"/>
 			<arg value="--sync"/>
@@ -111,7 +111,7 @@
 			<fileset dir="${testAppPath}/test-result" includes="**/*"/>
 			<fileset dir="${testAppPath}/tmp" includes="**/*"/>
 		</delete>
-		<exec executable="${play.home}/play" failonerror="true" dir="${testAppPath}">
+		<exec executable="${play.path}/play" failonerror="true" dir="${testAppPath}">
 			<arg value="auto-test"/>
 		</exec>
 	</target>
@@ -127,7 +127,6 @@
 			<param name="testAppPath" value="${testAppPath}"/>
 		</antcall>
 		<antcall target="play-auto-test">
-			<param name="play.path" value="${play.home}"/>
 			<param name="testAppPath" value="${testAppPath}"/>
 		</antcall>
 		<available file="${testAppPath}/test-result/result.passed" property="${testAppPath}testPassed" />
